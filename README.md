@@ -21,6 +21,27 @@ The reorder logic lives in `ReorderableStore`, a plain `@Observable` class with 
 - `Sources/ReorderableDemo/ReorderableGridDemoView.swift` — `LazyVGrid`-based reorder UI using the same store.
 - `Sources/ReorderableDemo/ContentView.swift` — a segmented control switching between the two, so you can see one store powering both.
 - `Tests/ReorderableDemoTests/ReorderableStoreTests.swift` — move-to-start, move-to-end, move-through-middle, out-of-bounds guard, and no-op cases, all exercised without instantiating a single view.
+- `DemoApp/DemoApp.xcodeproj` — a real, minimal Xcode project that hosts the library as a runnable app on Simulator (see "How to run it" and "Runtime crash found & fixed" below for why this exists as a separate `.xcodeproj` rather than a Swift Package executable target).
+
+## How to run it
+
+1. Open `DemoApp/DemoApp.xcodeproj` in Xcode (not `Package.swift` — see below for why).
+2. Xcode resolves `ReorderableDemo` as a local Swift Package dependency automatically.
+3. Select the `DemoApp` scheme, pick any iOS Simulator destination, and Build & Run.
+
+## Runtime crash found & fixed
+
+An earlier version of this repo shipped `ReorderableDemoApp` as a Swift Package `.executableTarget`, relying on Xcode's "run a package directly on Simulator" convenience to make it launchable. That crashed on every single launch, 100% reproducibly, verified three times in a real Xcode debug session:
+
+```
+failure in __BKSHIDEvent__BUNDLE_IDENTIFIER_FOR_CURRENT_PROCESS_IS_NIL__
+(BKSHIDEvent.m:92) : missing bundleID for main bundle
+EXC_BREAKPOINT on com.apple.uikit.eventfetch-thread
+```
+
+Root cause: that convenience stores the synthesized Bundle Identifier in a per-checkout Xcode setting that never gets committed to git — so it's inherently non-reproducible, and came back empty here. The fix was to replace it with `DemoApp/DemoApp.xcodeproj`, a real Xcode project with the Bundle Identifier written directly into `project.pbxproj` (committed, version-controlled, reproducible for anyone who clones this repo).
+
+Honest verification status: the `.xcodeproj` was authored by hand (valid PBX object graph, balanced braces/parens checked programmatically) rather than through Xcode's project wizard, because driving Xcode's GUI reliably wasn't possible in this environment without risking interference with unrelated windows open on the same machine. It has **not** been confirmed to open and Build & Run cleanly in Xcode yet — that final check is worth doing before treating this as fully verified.
 
 ## Portfolio category
 
@@ -28,4 +49,4 @@ iOS Lead / Architect · Latest Concept (WWDC26 SwiftUI reorder API)
 
 ## Note
 
-This was authored in a headless environment without Xcode/iOS Simulator access, so it hasn't been compiled or run on-device, and the exact reorder-gesture API surface should be checked against Apple's finalized WWDC26 documentation before shipping — the code here uses the established `onMove(perform:)` closure pattern applied to both `List` and `LazyVGrid` as the mechanism, since that's the pattern the WWDC26 coverage describes extending to more containers; Apple's final method name/signature may differ slightly. The store logic itself has no SwiftUI dependency and is written to be trivially testable regardless of which exact reorder API wires into it. A screen recording of the drag interaction on both container types would be a strong addition before treating this as fully "shipped" portfolio material.
+The reorder-gesture API surface should be checked against Apple's finalized WWDC26 documentation before shipping — the code here uses the established `onMove(perform:)` closure pattern applied to both `List` and `LazyVGrid` as the mechanism, since that's the pattern the WWDC26 coverage describes extending to more containers; Apple's final method name/signature may differ slightly. The store logic itself has no SwiftUI dependency and is written to be trivially testable regardless of which exact reorder API wires into it. A screen recording of the drag interaction on both container types would be a strong addition before treating this as fully "shipped" portfolio material.
