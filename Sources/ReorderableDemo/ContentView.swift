@@ -42,7 +42,7 @@ public struct ContentView: View {
 
 extension ReorderableStore {
     /// Sample data so the demo runs standalone with no setup.
-    static var sampleData: ReorderableStore {
+    public static var sampleData: ReorderableStore {
         ReorderableStore(entries: [
             ReorderableEntry(title: "Architecture Review", subtitle: "Due Monday"),
             ReorderableEntry(title: "System Design Doc", subtitle: "In review"),
