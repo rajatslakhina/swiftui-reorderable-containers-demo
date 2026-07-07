@@ -21,15 +21,14 @@ The reorder logic lives in `ReorderableStore`, a plain `@Observable` class with 
 - `Sources/ReorderableDemo/ReorderableGridDemoView.swift` — `LazyVGrid`-based reorder UI using the same store.
 - `Sources/ReorderableDemo/ContentView.swift` — a segmented control switching between the two, so you can see one store powering both.
 - `Tests/ReorderableDemoTests/ReorderableStoreTests.swift` — move-to-start, move-to-end, move-through-middle, out-of-bounds guard, and no-op cases, all exercised without instantiating a single view.
-- `DemoApp/DemoApp.xcodeproj` — a real, minimal Xcode project that hosts the library as a runnable app on Simulator (see "How to run it" and "Runtime crash found & fixed" below for why this exists as a separate `.xcodeproj` rather than a Swift Package executable target).
 
-## How to run it
+**Runnable demo:** [swiftui-reorderable-containers-demo-app](https://github.com/rajatslakhina/swiftui-reorderable-containers-demo-app) — a separate app that adds this package as a remote Swift Package dependency and runs it. This repo contains only the library.
 
-1. Open `DemoApp/DemoApp.xcodeproj` in Xcode (not `Package.swift` — see below for why).
-2. Xcode resolves `ReorderableDemo` as a local Swift Package dependency automatically.
-3. Select the `DemoApp` scheme, pick any iOS Simulator destination, and Build & Run.
+## How to run the demo
 
-## Runtime crash found & fixed
+Open [swiftui-reorderable-containers-demo-app](https://github.com/rajatslakhina/swiftui-reorderable-containers-demo-app) — this repo is library-only and intentionally has no app target to run.
+
+## Runtime crash found & fixed (history)
 
 An earlier version of this repo shipped `ReorderableDemoApp` as a Swift Package `.executableTarget`, relying on Xcode's "run a package directly on Simulator" convenience to make it launchable. That crashed on every single launch, 100% reproducibly, verified three times in a real Xcode debug session:
 
@@ -39,9 +38,7 @@ failure in __BKSHIDEvent__BUNDLE_IDENTIFIER_FOR_CURRENT_PROCESS_IS_NIL__
 EXC_BREAKPOINT on com.apple.uikit.eventfetch-thread
 ```
 
-Root cause: that convenience stores the synthesized Bundle Identifier in a per-checkout Xcode setting that never gets committed to git — so it's inherently non-reproducible, and came back empty here. The fix was to replace it with `DemoApp/DemoApp.xcodeproj`, a real Xcode project with the Bundle Identifier written directly into `project.pbxproj` (committed, version-controlled, reproducible for anyone who clones this repo).
-
-Honest verification status: the `.xcodeproj` was authored by hand (valid PBX object graph, balanced braces/parens checked programmatically) rather than through Xcode's project wizard, because driving Xcode's GUI reliably wasn't possible in this environment without risking interference with unrelated windows open on the same machine. It has **not** been confirmed to open and Build & Run cleanly in Xcode yet — that final check is worth doing before treating this as fully verified.
+Root cause: that convenience stores the synthesized Bundle Identifier in a per-checkout Xcode setting that never gets committed to git — so it's inherently non-reproducible, and came back empty here. The first fix nested a real, hand-authored `DemoApp.xcodeproj` inside this repo instead, consuming the library via a *local* Swift Package reference. That's an improvement, but it only proves the library builds when sitting right next to its consumer on disk. The demo has since moved out entirely into [swiftui-reorderable-containers-demo-app](https://github.com/rajatslakhina/swiftui-reorderable-containers-demo-app), a fully separate repo depending on this one via a **remote** Swift Package reference — the same way any real third-party consumer would.
 
 ## Portfolio category
 
